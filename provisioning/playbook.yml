@@ -1,0 +1,70 @@
+---
+- name: 'prestashop-workspace playbook'
+  hosts: all
+
+  tasks:
+
+    - name: update apt cache
+      apt: update_cache=yes cache_valid_time=3600
+      sudo: yes
+
+    - name: install some useful packages
+      apt: pkg={{ item }} state=latest
+      sudo: yes
+      with_items:
+        - vim
+        - unzip
+        - tree
+
+    - name: install mysql-server and mysql-client
+      apt: pkg={{ item }} state=latest
+      sudo: yes
+      with_items:
+        - mysql-server
+        - mysql-client
+
+    - name: install php5
+      apt: pkg=php5 state=latest
+      sudo: yes
+
+    - name: install php5-mysql binding
+      apt: pkg=php5-mysql state=latest
+      sudo: yes
+
+    - name: install apache2 http server
+      apt: pkg=apache2 state=latest
+      sudo: yes
+
+    - name: install apache php5 module
+      apt: pkg=libapache2-mod-php5 state=latest
+      sudo: yes
+
+    - name: enable apache php5 module
+      apache2_module: state=present name=php5
+
+    - name: install phpmyadmin
+      apt: pkg=phpmyadmin state=latest
+      sudo: yes
+
+    - name: configure phpmyadmin
+      file: src={{ item.src }} dest={{ item.dest }} state=link
+      sudo: yes
+      with_items:
+        - { src: '/etc/phpmyadmin/apache.conf',   dest: '/etc/apache2/sites-available/phpmyadmin' }
+        - { src: '../sites-available/phpmyadmin', dest: '/etc/apache2/sites-enabled/001-phpmyadmin' }
+      notify:
+        - restart apache
+
+    - name: add phpinfo page
+      copy: src=files/phpinfo dest=/var/www/
+      sudo: yes
+      notify:
+        - restart apache
+
+    - name: ensure apache is running
+      service: name=apache2 state=started
+
+  handlers:
+    - name: restart apache
+      sudo: yes
+      service: name=apache2 state=restarted enabled=yes
