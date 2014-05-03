@@ -9,6 +9,7 @@ This is basically a Vagrant box (Ubuntu 12.04 LTS [hashicorp/precise32](https://
 * PHP5
 * MySQL5
 * phpMyAdmin hosted at /phpmyadmin
+* Prestabox 1.6.0.6
 
 The hostname set is `prestashopbox` in a `public_network` config.
 
