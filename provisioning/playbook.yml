@@ -15,13 +15,19 @@
         - vim
         - unzip
         - tree
+        - curl
+        - git
 
-    - name: install mysql-server and mysql-client
+    - name: install mysql (server + client + python binding)
       apt: pkg={{ item }} state=latest
       sudo: yes
       with_items:
         - mysql-server
         - mysql-client
+        - python-mysqldb
+
+    - name: create a prestashop mysql user
+      mysql_user: name=prestashop password=prestashop priv=*.*:ALL state=present
 
     - name: install php5
       apt: pkg=php5 state=latest
@@ -46,7 +52,11 @@
       apt: pkg=phpmyadmin state=latest
       sudo: yes
 
-    - name: configure phpmyadmin
+    - name: configure phpmyadmin to allow root connection
+      copy: src=files/phpmyadmin/config.inc.php dest=/etc/phpmyadmin/config.inc.php
+      sudo: yes
+
+    - name: enable phpmyadmin application in apache
       file: src={{ item.src }} dest={{ item.dest }} state=link
       sudo: yes
       with_items:
@@ -55,9 +65,16 @@
       notify:
         - restart apache
 
-    - name: add phpinfo page
-      copy: src=files/phpinfo dest=/var/www/
+    - name: remove apache default index.html page
+      file: path=/var/www/index.html state=absent
       sudo: yes
+
+    - name: clone prestashop github repository and submodules
+      git: repo=https://github.com/PrestaShop/PrestaShop.git dest=/var/www/ version=1.6.0.6 recursive=yes
+      sudo: yes
+
+    - name: install prestashop using cli
+      command: /usr/bin/php index_cli.php --domain=prestashopbox --db_user=prestashop --db_password=prestashop --db_create=1 chdir=/var/www/install-dev
       notify:
         - restart apache
 
