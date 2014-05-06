@@ -73,8 +73,13 @@
       git: repo=https://github.com/PrestaShop/PrestaShop.git dest=/var/www/ version=1.6.0.6 recursive=yes
       sudo: yes
 
+    - name: set permissions for www directory
+      file: path=/var/www group=www-data mode=0775 recurse=yes
+      sudo: yes
+
     - name: install prestashop using cli
       command: /usr/bin/php index_cli.php --domain=prestashopbox --db_user=prestashop --db_password=prestashop --db_create=1 chdir=/var/www/install-dev
+      sudo: yes
       notify:
         - restart apache
 
